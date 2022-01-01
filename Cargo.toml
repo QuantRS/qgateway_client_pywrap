@@ -15,4 +15,4 @@ tokio = { version = "1.15.0", features = ["full"] }
 
 pyo3 = { version = "0.15.1", features = ["extension-module"] }
 
-qgateway_client = { git = "ssh://git@github.com/QuantRS/qgateway_client.git", branch = "master" }
+qgateway_client = { path = "../qgateway_client"}

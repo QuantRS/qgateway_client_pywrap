@@ -2,7 +2,6 @@
 use futures::StreamExt;
 use pyo3::{prelude::*, types::PyTuple};
 
-
 #[pyclass]
 struct Client {
     client: qgateway_client::client::Client,
@@ -17,6 +16,22 @@ impl Client {
     }
 
     pub fn subscribe(&mut self, token: String, keys: Vec<String>, callback: PyObject, _py: Python) -> PyResult<()> {
+        let mut rx = self.runtime.block_on(async {
+            self.client.subscribe(token, keys).await
+        });
+
+        self.runtime.spawn(async move {
+            while let Some(data) = rx.next().await {
+                Python::with_gil( |_py| {
+                    let args = PyTuple::new(_py, [data.into_py(_py)]);
+                    callback.call(_py, args, None).unwrap();
+                });
+            }
+        });
+        Ok(())
+    }
+
+    pub fn subscribe_blocking(&mut self, token: String, keys: Vec<String>, callback: PyObject, _py: Python) -> PyResult<()> {
         self.runtime.block_on(async {
             let mut rx = self.client.subscribe(token, keys).await;
             while let Some(data) = rx.next().await {

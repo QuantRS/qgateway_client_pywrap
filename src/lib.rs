@@ -5,7 +5,8 @@ use pyo3::{prelude::*, types::PyTuple};
 
 #[pyclass]
 struct Client {
-    client: qgateway_client::client::Client
+    client: qgateway_client::client::Client,
+    runtime: tokio::runtime::Runtime,
 }
 
 #[pymethods]
@@ -16,8 +17,7 @@ impl Client {
     }
 
     pub fn subscribe(&mut self, token: String, keys: Vec<String>, callback: PyObject, _py: Python) -> PyResult<()> {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
+        self.runtime.block_on(async {
             let mut rx = self.client.subscribe(token, keys).await;
             while let Some(data) = rx.next().await {
                 let args = PyTuple::new(_py, [data.into_py(_py)]);
@@ -31,13 +31,15 @@ impl Client {
 #[pyfunction]
 fn new_client(url: String, auth_token: String) -> Client {
     let mut client = qgateway_client::client::Client::new(url, auth_token);
-    let rt = tokio::runtime::Runtime::new().unwrap();
+
+    let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
     rt.block_on(async {
         client.connection().await;
     });
 
     Client{
-        client
+        client,
+        runtime: rt
     }
 }
 

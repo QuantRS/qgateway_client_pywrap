@@ -1,0 +1,18 @@
+[package]
+name = "qgateway_client_pywrap"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "qgateway_client_pywrap"
+crate-type = ["cdylib"]
+
+[dependencies]
+# base
+futures = "0.3"
+tokio = { version = "1.15.0", features = ["full"] }
+
+pyo3 = { version = "0.15.1", features = ["extension-module"] }
+
+qgateway_client = { path = "../qgateway_client"}

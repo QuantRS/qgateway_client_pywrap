@@ -1,5 +1,5 @@
 
-use futures::StreamExt;
+use futures::{StreamExt, channel::mpsc::UnboundedReceiver};
 use pyo3::{prelude::*, types::PyTuple};
 
 #[pyclass]
@@ -31,6 +31,17 @@ impl Client {
         Ok(())
     }
 
+    pub fn subscribe_advanced(&mut self, token: String, _py: Python) -> SubscribeAdvanced {
+        let rx = self.runtime.block_on(async {
+            self.client.subscribe(token, Vec::new()).await
+        });
+
+        SubscribeAdvanced{
+            rx,
+            rt: self.runtime.handle().clone()
+        }
+    }
+
     pub fn subscribe_blocking(&mut self, token: String, keys: Vec<String>, callback: PyObject, _py: Python) -> PyResult<()> {
         self.runtime.block_on(async {
             let mut rx = self.client.subscribe(token, keys).await;
@@ -40,6 +51,21 @@ impl Client {
             }
         });
         Ok(())
+    }
+}
+
+#[pyclass]
+struct SubscribeAdvanced {
+    rx: UnboundedReceiver<String>,
+    rt: tokio::runtime::Handle
+}
+
+#[pymethods]
+impl SubscribeAdvanced {
+    pub fn next(&mut self) -> PyResult<String> {
+        Ok(self.rt.block_on(async {
+            self.rx.next().await.unwrap()
+        }))
     }
 }
 

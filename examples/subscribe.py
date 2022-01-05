@@ -7,5 +7,5 @@ if __name__ == '__main__':
         print(data)
     client.subscribe('c09c21f8-c29d-3fb3-86a8-39109742c802', ['haha'], callback)
 
-    while 1:
-        time.sleep(10)
+    from threading import Event
+    Event().wait()

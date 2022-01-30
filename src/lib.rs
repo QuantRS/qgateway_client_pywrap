@@ -20,7 +20,7 @@ impl Client {
         Ok(())
     }
 
-    pub fn send(&mut self, token: String, key: String, value: String) -> PyResult<()> {
+    pub fn send(&mut self, token: String, key: String, value: Vec<u8>) -> PyResult<()> {
         let client_clone = self.client.clone();
 
         let rt = self.runtime.lock().unwrap();
